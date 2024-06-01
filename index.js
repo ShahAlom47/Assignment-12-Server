@@ -8,6 +8,8 @@ var jwt = require('jsonwebtoken');
 
 
 
+
+
 app.use(express.json())
 app.use(
   cors({
@@ -19,9 +21,6 @@ app.use(
     credentials: true,
   })
 );
-
-// assignment-12-server
-// BnYz6dh2IpmoSJkB
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -48,6 +47,8 @@ async function run() {
 
   
     const userCollection = client.db("Assign_12_DB").collection('usersData')
+    const propertyCollection = client.db("Assign_12_DB").collection('propertyData')
+    const reviewCollection = client.db("Assign_12_DB").collection('reviewData')
     
 
     // middleware 
@@ -118,6 +119,32 @@ app.post('/addUser',async(req,res)=>{
 
 
 
+// property related data 
+
+app.get('/property',async(req,res)=>{
+
+    const result= await propertyCollection.find().limit(6).toArray()
+    res.send(result)
+})
+app.get('/property/:id',async(req,res)=>{
+const id=req.params.id
+const query={_id: new ObjectId(id)}
+    const result= await propertyCollection.findOne(query)
+    res.send(result)
+})
+
+// ---------------------
+// --Review related API
+// --------------------
+
+
+app.post('/addReview',verifyToken,async(req,res)=>{
+
+  const {reviewData}=req.body
+  const result = await reviewCollection.insertOne(reviewData)
+  console.log(reviewData);
+  res.send(result)
+})
 
  
 
@@ -138,7 +165,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send('Bistro Boos Server is Running')
+  res.send(' Server is Running')
 })
 
 app.listen(port, () => {
