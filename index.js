@@ -149,10 +149,17 @@ app.post('/addReview',verifyToken,async(req,res)=>{
 //  get reviewData
 
 app.get('/allReview',async(req,res)=>{
-
       const result= await reviewCollection.find().toArray();
       res.send(result)
   })
+app.get(`/reviews/:id`,async(req,res)=>{
+  const id = req.params.id;
+  const query = {property_id:id}
+      const result= await reviewCollection.find(query).toArray();
+      res.send(result)
+  })
+
+
 
 
     
