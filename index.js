@@ -137,7 +137,7 @@ const query={_id: new ObjectId(id)}
 // --Review related API
 // --------------------
 
-
+// add review 
 app.post('/addReview',verifyToken,async(req,res)=>{
 
   const {reviewData}=req.body
@@ -146,7 +146,13 @@ app.post('/addReview',verifyToken,async(req,res)=>{
   res.send(result)
 })
 
- 
+//  get reviewData
+
+app.get('/allReview',async(req,res)=>{
+
+      const result= await reviewCollection.find().toArray();
+      res.send(result)
+  })
 
 
     
