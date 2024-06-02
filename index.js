@@ -122,10 +122,14 @@ app.post('/addUser',async(req,res)=>{
 // property related data 
 
 app.get('/property',async(req,res)=>{
-
     const result= await propertyCollection.find().limit(6).toArray()
     res.send(result)
 })
+app.get('/allProperty',async(req,res)=>{
+    const result= await propertyCollection.find().toArray()
+    res.send(result)
+})
+
 app.get('/property/:id',async(req,res)=>{
 const id=req.params.id
 const query={_id: new ObjectId(id)}
