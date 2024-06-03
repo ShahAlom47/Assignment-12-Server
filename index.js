@@ -46,12 +46,13 @@ async function run() {
     // // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
 
-  
+
     const userCollection = client.db("Assign_12_DB").collection('usersData')
     const propertyCollection = client.db("Assign_12_DB").collection('propertyData')
     const reviewCollection = client.db("Assign_12_DB").collection('reviewData')
     const enquiryCollection = client.db("Assign_12_DB").collection('enquiryData')
-    
+    const wishListCollection = client.db("Assign_12_DB").collection('wishListData')
+
 
     // middleware 
     const verifyToken = (req, res, next) => {
@@ -81,130 +82,166 @@ async function run() {
     //   next()
     // }
 
-    // jwt related API
 
-    // app.post('/jwt', async (req, res) => {
-    //   const userInfo = req.body.userInfo
+    // jwt releted api 
 
-    //   const token = jwt.sign({
-    //     data: userInfo
-    //   }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
-    //   res.send({ token })
+    app.post('/jwt', async (req, res) => {
+      const userInfo = req.body.userInfo
 
+      const token = jwt.sign({
+        data: userInfo
+      }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
+      res.send({ token })
 
-    // })
-// jwt releted api 
+    })
 
-app.post('/jwt', async (req, res) => {
-    const userInfo = req.body.userInfo
+    app.post('/addUser', async (req, res) => {
+      const userInfo = req.body
 
-    const token = jwt.sign({
-      data: userInfo
-    }, process.env.ACCESS_TOKEN, { expiresIn: '1h' });
-    res.send({ token })
+      const query = { email: userInfo.email }
+      const existingUser = await userCollection.findOne(query)
+      if (existingUser) {
+        return res.send({ message: 'user already exist', insertedId: null })
+      }
 
-  })
+      const result = await userCollection.insertOne(userInfo)
+      res.send(result)
 
-app.post('/addUser',async(req,res)=>{
-    const userInfo= req.body
-    
-    const query = { email: userInfo.email }
-    const existingUser = await userCollection.findOne(query)
-    if (existingUser) {
-      return res.send({ message: 'user already exist', insertedId: null })
-    }
+    })
 
-    const result =await userCollection.insertOne(userInfo)
-    res.send(result)
-
-})
-
-app.get('/user/role/:email', async (req, res) => {
-  const userEmail = req.params.email
-  // const tokenEmail = req.decoded.data;
-  // if (userEmail !== tokenEmail) {
-  //   return res.status(403).send({ message: 'forbidden user' })
-  // }
-  const query = { email: userEmail }
-  const result = await userCollection.findOne(query)
-  const userRole = result && result.role ? result.role : 'user';
-  res.send({ userRole });
-})
+    app.get('/user/role/:email', verifyToken, async (req, res) => {
+      const userEmail = req.params.email
+      const tokenEmail = req.decoded.data;
+      if (userEmail !== tokenEmail) {
+        return res.status(403).send({ message: 'forbidden user' })
+      }
+      const query = { email: userEmail }
+      const result = await userCollection.findOne(query)
+      const userRole = result && result.role ? result.role : 'user';
+      res.send({ userRole });
+    })
 
 
 
 
 
-// property related data 
+    // property related data 
 
-app.get('/property',async(req,res)=>{
-    const result= await propertyCollection.find().limit(6).toArray()
-    res.send(result)
-})
-app.get('/allProperty',async(req,res)=>{
-    const result= await propertyCollection.find().toArray()
-    res.send(result)
-})
+    app.get('/property', async (req, res) => {
+      const result = await propertyCollection.find().limit(6).toArray()
+      res.send(result)
+    })
+    app.get('/allProperty', async (req, res) => {
+      const result = await propertyCollection.find().toArray()
+      res.send(result)
+    })
 
-app.get('/property/:id',async(req,res)=>{
-const id=req.params.id
-const query={_id: new ObjectId(id)}
-    const result= await propertyCollection.findOne(query)
-    res.send(result)
-})
+    app.get('/property/:id', async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await propertyCollection.findOne(query)
+      res.send(result)
+    })
 
-// ---------------------
-// --Review related API
-// --------------------
+    // ---------------------
+    // --Review related API
+    // --------------------
 
-// add review 
-app.post('/addReview',verifyToken,async(req,res)=>{
+    // add review 
+    app.post('/addReview', verifyToken, async (req, res) => {
 
-  const {reviewData}=req.body
-  const result = await reviewCollection.insertOne(reviewData)
-  console.log(reviewData);
-  res.send(result)
-})
+      const { reviewData } = req.body
+      const result = await reviewCollection.insertOne(reviewData)
 
-//  get reviewData
+      res.send(result)
+    })
 
-app.get('/allReview', async (req, res) => {
-  const isLatest = req.query.laTest === 'true';
+    //  get reviewData
 
-  const options = {};
-  if (isLatest) {
-      options.sort = { date: -1 }; 
-  }
-  
-  console.log(isLatest);
-  const result = await reviewCollection.find().sort(options.sort).toArray();
-  // const result = await reviewCollection.find().sort(options.sort).limit(3).toArray();
-  res.send(result);
-});
+    app.get('/allReview', async (req, res) => {
+      const isLatest = req.query.laTest === 'true';
 
+      const options = {};
+      if (isLatest) {
+        options.sort = { date: -1 };
+      }
 
-app.get(`/reviews/:id`,async(req,res)=>{
-  const id = req.params.id;
-  const query = {property_id:id}
-  const result = await reviewCollection.find(query).sort({ date: -1 }).toArray();
-res.send(result);
-  })
+      console.log(isLatest);
+      const result = await reviewCollection.find().sort(options.sort).toArray();
+      // const result = await reviewCollection.find().sort(options.sort).limit(3).toArray();
+      res.send(result);
+    });
 
 
-  
+    app.get(`/reviews/:id`, async (req, res) => {
+      const id = req.params.id;
+      const query = { property_id: id }
+      const result = await reviewCollection.find(query).sort({ date: -1 }).toArray();
+      res.send(result);
+    })
 
-  // enquiry api 
 
 
-  app.post('/addEnquiry',async(req,res)=>{
+    // Wish list related api 
 
-    const enquiryData=req.body
-    const result = await enquiryCollection.insertOne(enquiryData)
-    console.log(enquiryData);
-    res.send(result)
-  })
+    app.post('/addWishList', verifyToken, async (req, res) => {
 
-    
+      const wishData = req.body
+      const { userEmail, property_id } = wishData
+
+      const options = {
+        property_id: property_id,
+        userEmail: userEmail,
+
+      }
+      const existingWish = await wishListCollection.findOne(options);
+
+      console.log(existingWish)
+
+      if (existingWish) {
+        res.send({ message: 'Wishlist item already exists' });
+        return
+      }
+
+
+      const result = await wishListCollection.insertOne(wishData)
+     
+      res.send(result)
+    })
+
+
+    // get user wishlist 
+
+    app.get(`/wishList/:email`, async (req, res) => {
+      const email = req.params.email;
+      const query = { userEmail: email }
+      const result = await wishListCollection.find(query).toArray();
+      res.send(result);
+    })
+
+
+    // delete wihList 
+
+    app.delete('/wishList/delete/:id',verifyToken,async(req,res)=>{
+
+      const id=req.params.id;
+      const result = await wishListCollection.deleteOne({_id: new ObjectId(id)})
+      res.send(result)
+      
+    })
+
+    // enquiry api 
+
+
+    app.post('/addEnquiry', async (req, res) => {
+
+      const enquiryData = req.body
+      const result = await enquiryCollection.insertOne(enquiryData)
+      console.log(enquiryData);
+      res.send(result)
+    })
+
+
 
 
     // // Send a ping to confirm a successful connection
