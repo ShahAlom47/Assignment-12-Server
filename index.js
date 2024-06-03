@@ -15,6 +15,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173",
+      "http://localhost:5174",
       'https://bistro-boss-final-projec-81261.web.app'
 
     ],
@@ -117,6 +118,20 @@ app.post('/addUser',async(req,res)=>{
     res.send(result)
 
 })
+
+app.get('/user/role/:email', async (req, res) => {
+  const userEmail = req.params.email
+  // const tokenEmail = req.decoded.data;
+  // if (userEmail !== tokenEmail) {
+  //   return res.status(403).send({ message: 'forbidden user' })
+  // }
+  const query = { email: userEmail }
+  const result = await userCollection.findOne(query)
+  const userRole = result && result.role ? result.role : 'user';
+  res.send({ userRole });
+})
+
+
 
 
 
