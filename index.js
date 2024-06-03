@@ -52,6 +52,7 @@ async function run() {
     const reviewCollection = client.db("Assign_12_DB").collection('reviewData')
     const enquiryCollection = client.db("Assign_12_DB").collection('enquiryData')
     const wishListCollection = client.db("Assign_12_DB").collection('wishListData')
+    const offerDataCollection = client.db("Assign_12_DB").collection('offerData')
 
 
     // middleware 
@@ -229,6 +230,18 @@ async function run() {
       res.send(result)
       
     })
+
+
+// offer related api
+app.post('/addOffer',verifyToken, async (req, res) => {
+
+  const offerData = req.body
+  const result = await offerDataCollection.insertOne(offerData)
+ 
+  res.send(result)
+})
+
+
 
     // enquiry api 
 
