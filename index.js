@@ -181,6 +181,21 @@ async function run() {
       res.send(result);
     })
 
+    // get user review 
+    app.get(`/reviews/user/:email`, verifyToken,async (req, res) => {
+      const email = req.params.email;
+      const query = { user_email: email }
+      const result = await reviewCollection.find(query).toArray();
+      res.send(result);
+    })
+
+    app.delete(`/reviews/user/delete/:id`,verifyToken, async (req, res) => {
+      const id = req.params.id;
+     console.log(id);
+      const result = await reviewCollection.deleteOne({_id: new ObjectId(id)})
+      res.send(result);
+    })
+
 
 
     // Wish list related api 
