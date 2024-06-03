@@ -49,6 +49,7 @@ async function run() {
     const userCollection = client.db("Assign_12_DB").collection('usersData')
     const propertyCollection = client.db("Assign_12_DB").collection('propertyData')
     const reviewCollection = client.db("Assign_12_DB").collection('reviewData')
+    const enquiryCollection = client.db("Assign_12_DB").collection('enquiryData')
     
 
     // middleware 
@@ -152,19 +153,41 @@ app.post('/addReview',verifyToken,async(req,res)=>{
 
 //  get reviewData
 
-app.get('/allReview',async(req,res)=>{
-      const result= await reviewCollection.find().toArray();
-      res.send(result)
-  })
+app.get('/allReview', async (req, res) => {
+  const isLatest = req.query.laTest === 'true';
+
+  const options = {};
+  if (isLatest) {
+      options.sort = { date: -1 }; 
+  }
+  
+  console.log(isLatest);
+  const result = await reviewCollection.find().sort(options.sort).toArray();
+  // const result = await reviewCollection.find().sort(options.sort).limit(3).toArray();
+  res.send(result);
+});
+
+
 app.get(`/reviews/:id`,async(req,res)=>{
   const id = req.params.id;
   const query = {property_id:id}
-      const result= await reviewCollection.find(query).toArray();
-      res.send(result)
+  const result = await reviewCollection.find(query).sort({ date: -1 }).toArray();
+res.send(result);
   })
 
 
+  
 
+  // enquiry api 
+
+
+  app.post('/addEnquiry',async(req,res)=>{
+
+    const enquiryData=req.body
+    const result = await enquiryCollection.insertOne(enquiryData)
+    console.log(enquiryData);
+    res.send(result)
+  })
 
     
 
