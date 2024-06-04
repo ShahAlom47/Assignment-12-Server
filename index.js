@@ -71,6 +71,19 @@ async function run() {
       });
     }
 
+    const verifyAgent = async (req, res, next) => {
+      const tokenEmail = req.decoded.data;
+      const query = { email:tokenEmail }
+      const result = await userCollection.findOne(query)
+      const isAgent = result?.role === 'agent'
+
+      if (!isAgent) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+      next()
+    }
+
+
     // const verifyAdmin = async (req, res, next) => {
     //   const tokenEmail = req.decoded.data;
     //   const query = { email: tokenEmail }
@@ -128,7 +141,7 @@ async function run() {
 
     // property related data 
 
-    app.post('/addProperty', verifyToken, async (req, res) => {
+    app.post('/addProperty', verifyToken,verifyAgent, async (req, res) => {
       const propertyData= req.body;
       const result = await propertyCollection.insertOne(propertyData)
      
@@ -148,6 +161,20 @@ async function run() {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertyCollection.findOne(query)
+      res.send(result)
+    })
+
+    app.get('/myAddedProperty/:email',verifyToken,verifyAgent, async (req, res) => {
+      const email = req.params.email
+      const query = { agent_email: email }
+      const result = await propertyCollection.find(query).toArray()
+      res.send(result)
+    })
+
+    app.delete('/myAddedProperty/delete/:id',verifyToken,verifyAgent, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await propertyCollection.deleteOne(query)
       res.send(result)
     })
 
