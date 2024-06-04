@@ -128,6 +128,13 @@ async function run() {
 
     // property related data 
 
+    app.post('/addProperty', verifyToken, async (req, res) => {
+      const propertyData= req.body;
+      const result = await propertyCollection.insertOne(propertyData)
+     
+      res.send(result)
+    })
+
     app.get('/property', async (req, res) => {
       const result = await propertyCollection.find().limit(6).toArray()
       res.send(result)
