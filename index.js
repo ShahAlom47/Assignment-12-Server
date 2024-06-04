@@ -256,6 +256,15 @@ app.post('/addOffer',verifyToken, async (req, res) => {
   res.send(result)
 })
 
+app.get('/offeredProperty/:email',verifyToken, async(req, res) => {
+
+  const email = req.params.email
+  const query= {buyer_email:email}
+  const result = await offerDataCollection.find(query).toArray()
+
+  res.send(result)
+})
+
 
 
     // enquiry api 
