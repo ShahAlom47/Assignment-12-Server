@@ -187,7 +187,7 @@ async function run() {
       const updateDoc = {
         $set: newData
       };
-      console.log(newData);
+     
       const result = await propertyCollection.updateOne(query,updateDoc)
       res.send(result)
     })
@@ -311,6 +311,40 @@ app.get('/offeredProperty/:email',verifyToken, async(req, res) => {
   const result = await offerDataCollection.find(query).toArray()
 
   res.send(result)
+})
+
+app.delete('/offeredProperty/delete/:id',verifyToken, async(req, res) => {
+
+  const id = req.params.id
+  const query= {_id:new ObjectId(id)}
+  const result = await offerDataCollection.deleteOne(query)
+
+  res.send(result)
+})
+
+
+app.get('/offeredProperty/request/:email',verifyToken,verifyAgent, async(req, res) => {
+
+  const email = req.params.email
+  const query= {agent_email:email}
+  const result = await offerDataCollection.find(query).toArray()
+
+  res.send(result)
+})
+app.patch('/offeredProperty/status/:id',verifyToken,verifyAgent, async(req, res) => {
+
+  const id = req.params.id
+  const {verification_status}=req.body
+  const query = { _id: new ObjectId(id) };
+  const updateDoc = {
+    $set: { verification_status: verification_status }
+  };
+
+  const result = await offerDataCollection.updateOne(query, updateDoc);
+
+  res.send(result)
+  
+console.log(id, verification_status);
 })
 
 
