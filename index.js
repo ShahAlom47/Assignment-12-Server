@@ -162,6 +162,7 @@ async function run() {
       const query = { _id: new ObjectId(id) }
       const result = await propertyCollection.findOne(query)
       res.send(result)
+  
     })
 
     app.get('/myAddedProperty/:email',verifyToken,verifyAgent, async (req, res) => {
@@ -175,6 +176,19 @@ async function run() {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertyCollection.deleteOne(query)
+      res.send(result)
+    })
+
+
+    app.patch('/updateProperty/:id',verifyToken,verifyAgent, async (req, res) => {
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const newData=req.body
+      const updateDoc = {
+        $set: newData
+      };
+      console.log(newData);
+      const result = await propertyCollection.updateOne(query,updateDoc)
       res.send(result)
     })
 
