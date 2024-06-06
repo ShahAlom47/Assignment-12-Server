@@ -7,7 +7,8 @@ var jwt = require('jsonwebtoken');
 
 
 
-
+const stripe = require('stripe')('sk_test_51PKiBjL0G1CCoDyDRkCUwtKpYgtrBhUq77lrlEW7VZ3qrktdgwqENoZXkNIamCJc5pdhkyouwywNOZzSdaagQXox00buzKKS5T');
+app.use(express.static('public'));
 
 
 app.use(express.json())
@@ -73,7 +74,7 @@ async function run() {
 
     const verifyAgent = async (req, res, next) => {
       const tokenEmail = req.decoded.data;
-      const query = { email:tokenEmail }
+      const query = { email: tokenEmail }
       const result = await userCollection.findOne(query)
       const isAgent = result?.role === 'agent'
 
@@ -141,10 +142,10 @@ async function run() {
 
     // property related data 
 
-    app.post('/addProperty', verifyToken,verifyAgent, async (req, res) => {
-      const propertyData= req.body;
+    app.post('/addProperty', verifyToken, verifyAgent, async (req, res) => {
+      const propertyData = req.body;
       const result = await propertyCollection.insertOne(propertyData)
-     
+
       res.send(result)
     })
 
@@ -162,17 +163,17 @@ async function run() {
       const query = { _id: new ObjectId(id) }
       const result = await propertyCollection.findOne(query)
       res.send(result)
-  
+
     })
 
-    app.get('/myAddedProperty/:email',verifyToken,verifyAgent, async (req, res) => {
+    app.get('/myAddedProperty/:email', verifyToken, verifyAgent, async (req, res) => {
       const email = req.params.email
       const query = { agent_email: email }
       const result = await propertyCollection.find(query).toArray()
       res.send(result)
     })
 
-    app.delete('/myAddedProperty/delete/:id',verifyToken,verifyAgent, async (req, res) => {
+    app.delete('/myAddedProperty/delete/:id', verifyToken, verifyAgent, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertyCollection.deleteOne(query)
@@ -180,15 +181,15 @@ async function run() {
     })
 
 
-    app.patch('/updateProperty/:id',verifyToken,verifyAgent, async (req, res) => {
+    app.patch('/updateProperty/:id', verifyToken, verifyAgent, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
-      const newData=req.body
+      const newData = req.body
       const updateDoc = {
         $set: newData
       };
-     
-      const result = await propertyCollection.updateOne(query,updateDoc)
+
+      const result = await propertyCollection.updateOne(query, updateDoc)
       res.send(result)
     })
 
@@ -230,17 +231,17 @@ async function run() {
     })
 
     // get user review 
-    app.get(`/reviews/user/:email`, verifyToken,async (req, res) => {
+    app.get(`/reviews/user/:email`, verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { user_email: email }
       const result = await reviewCollection.find(query).toArray();
       res.send(result);
     })
 
-    app.delete(`/reviews/user/delete/:id`,verifyToken, async (req, res) => {
+    app.delete(`/reviews/user/delete/:id`, verifyToken, async (req, res) => {
       const id = req.params.id;
-     console.log(id);
-      const result = await reviewCollection.deleteOne({_id: new ObjectId(id)})
+      console.log(id);
+      const result = await reviewCollection.deleteOne({ _id: new ObjectId(id) })
       res.send(result);
     })
 
@@ -269,7 +270,7 @@ async function run() {
 
 
       const result = await wishListCollection.insertOne(wishData)
-     
+
       res.send(result)
     })
 
@@ -286,66 +287,83 @@ async function run() {
 
     // delete wihList 
 
-    app.delete('/wishList/delete/:id',verifyToken,async(req,res)=>{
+    app.delete('/wishList/delete/:id', verifyToken, async (req, res) => {
 
-      const id=req.params.id;
-      const result = await wishListCollection.deleteOne({_id: new ObjectId(id)})
+      const id = req.params.id;
+      const result = await wishListCollection.deleteOne({ _id: new ObjectId(id) })
       res.send(result)
-      
+
     })
 
 
-// offer related api
-app.post('/addOffer',verifyToken, async (req, res) => {
+    // offer related api
+    app.post('/addOffer', verifyToken, async (req, res) => {
 
-  const offerData = req.body
-  const result = await offerDataCollection.insertOne(offerData)
- 
-  res.send(result)
-})
+      const offerData = req.body
+      const result = await offerDataCollection.insertOne(offerData)
 
-app.get('/offeredProperty/:email',verifyToken, async(req, res) => {
+      res.send(result)
+    })
 
-  const email = req.params.email
-  const query= {buyer_email:email}
-  const result = await offerDataCollection.find(query).toArray()
+    app.get('/offeredProperty', async (req, res) => {
 
-  res.send(result)
-})
+      const result = await offerDataCollection.find().toArray()
 
-app.delete('/offeredProperty/delete/:id',verifyToken, async(req, res) => {
-
-  const id = req.params.id
-  const query= {_id:new ObjectId(id)}
-  const result = await offerDataCollection.deleteOne(query)
-
-  res.send(result)
-})
+      res.send(result)
+    })
 
 
-app.get('/offeredProperty/request/:email',verifyToken,verifyAgent, async(req, res) => {
+    app.get('/offeredProperty/:email', verifyToken, async (req, res) => {
 
-  const email = req.params.email
-  const query= {agent_email:email}
-  const result = await offerDataCollection.find(query).toArray()
+      const email = req.params.email
+      const query = { buyer_email: email }
+      const result = await offerDataCollection.find(query).toArray()
 
-  res.send(result)
-})
-app.patch('/offeredProperty/status/:id',verifyToken,verifyAgent, async(req, res) => {
+      res.send(result)
+    })
 
-  const id = req.params.id
-  const {verification_status}=req.body
-  const query = { _id: new ObjectId(id) };
-  const updateDoc = {
-    $set: { verification_status: verification_status }
-  };
+    app.get('/offeredProperty/singleData/:id', verifyToken, async (req, res) => {
 
-  const result = await offerDataCollection.updateOne(query, updateDoc);
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await offerDataCollection.findOne(query)
+      console.log(id);
+      res.send(result)
+    })
 
-  res.send(result)
-  
-console.log(id, verification_status);
-})
+    app.delete('/offeredProperty/delete/:id', verifyToken, async (req, res) => {
+
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const result = await offerDataCollection.deleteOne(query)
+
+      res.send(result)
+    })
+
+
+    app.get('/offeredProperty/request/:email', verifyToken, verifyAgent, async (req, res) => {
+
+      const email = req.params.email
+      const query = { agent_email: email }
+      const result = await offerDataCollection.find(query).toArray()
+
+      res.send(result)
+    })
+    app.patch('/offeredProperty/status/:id', verifyToken, verifyAgent, async (req, res) => {
+
+      const id = req.params.id
+      const { verification_status } = req.body
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: { verification_status: verification_status }
+      };
+
+      const result = await offerDataCollection.updateOne(query, updateDoc);
+
+      res.send(result)
+
+      console.log(id, verification_status);
+    })
 
 
 
@@ -359,6 +377,51 @@ console.log(id, verification_status);
       console.log(enquiryData);
       res.send(result)
     })
+
+
+    // ---------------------
+    // PAYMENT 
+    // ---------------------
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(100 * price)
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "aed",
+        payment_method_types: [
+          "card",
+        ],
+      
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    // ---------------------
+    // PAYMENT 
+    // ---------------------
+
+    
+app.post('/create-checkout-session', async (req, res) => {
+  const session = await stripe.checkout.sessions.create({
+    line_items: [
+      {
+        // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+        price: '{{PRICE_ID}}',
+        quantity: 1,
+      },
+    ],
+    mode: 'payment',
+    success_url: `${YOUR_DOMAIN}?success=true`,
+    cancel_url: `${YOUR_DOMAIN}?canceled=true`,
+  });
+
+  res.redirect(303, session.url);
+});
+
 
 
 
