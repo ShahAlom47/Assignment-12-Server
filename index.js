@@ -54,6 +54,7 @@ async function run() {
     const enquiryCollection = client.db("Assign_12_DB").collection('enquiryData')
     const wishListCollection = client.db("Assign_12_DB").collection('wishListData')
     const offerDataCollection = client.db("Assign_12_DB").collection('offerData')
+    const paymentDataCollection = client.db("Assign_12_DB").collection('paymentData')
 
 
     // middleware 
@@ -85,17 +86,17 @@ async function run() {
     }
 
 
-    // const verifyAdmin = async (req, res, next) => {
-    //   const tokenEmail = req.decoded.data;
-    //   const query = { email: tokenEmail }
-    //   const result = await userCollection.findOne(query)
-    //   const isAdmin = result?.role === 'admin'
+    const verifyAdmin = async (req, res, next) => {
+      const tokenEmail = req.decoded.data;
+      const query = { email: tokenEmail }
+      const result = await userCollection.findOne(query)
+      const isAdmin = result?.role === 'admin'
 
-    //   if (!isAdmin) {
-    //     return res.status(403).send({ message: 'forbidden access' })
-    //   }
-    //   next()
-    // }
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+      next()
+    }
 
 
     // jwt releted api 
@@ -192,6 +193,22 @@ async function run() {
       const result = await propertyCollection.updateOne(query, updateDoc)
       res.send(result)
     })
+
+    // property verify by admin 
+    // ----------------------------
+    app.patch('/property/admin/verify/:id',verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id
+      const { status } = req.body
+      const query = { _id: new ObjectId(id) }
+      updateDoc = {
+        $set: { verification_status: status }
+      }
+      const result = await propertyCollection.updateOne(query,updateDoc);
+      res.send(result);
+    })
+
+
+
 
     // ---------------------
     // --Review related API
@@ -379,48 +396,97 @@ async function run() {
     })
 
 
+
+
+    // ---------------------
+    // PAYMENT History start
+    // ---------------------
+    app.post('/paymentHistory', async (req, res) => {
+      const paymentData = req.body
+      const offerCardId = paymentData.offerCardId;
+      const transactionId = paymentData.transactionId;
+      console.log(offerCardId, transactionId);
+      const session = client.startSession();
+      session.startTransaction();
+
+      // const result= await paymentDataCollection.insertOne(paymentData)
+
+      const statusUpdate = await offerDataCollection.updateOne(
+        { _id: new ObjectId(offerCardId) },
+        {
+          $set: { verification_status: 'bought' },
+          $push: { transactions: transactionId }
+        },
+        { session }
+      );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      res.send(statusUpdate)
+
+
+
+
+
+    })
+
+
+    // ---------------------
+    // PAYMENT  History end 
+    // ---------------------
     // ---------------------
     // PAYMENT 
     // ---------------------
 
+
     app.post("/create-payment-intent", async (req, res) => {
-      const { price } = req.body;
-      const amount = parseInt(100 * price)
-      // Create a PaymentIntent with the order amount and currency
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: amount,
-        currency: "aed",
-        payment_method_types: [
-          "card",
-        ],
-      
-      });
-      res.send({
-        clientSecret: paymentIntent.client_secret,
-      });
+      try {
+        const { price } = req.body;
+        const amount = parseInt(100 * price);
+        const MAX_AMOUNT = 99999999; // in the smallest currency unit, for AED this is 999,999.99 AED
+
+        if (amount > MAX_AMOUNT) {
+          return res.status(400).send({ error: 'Amount must be no more than 999,999 AED' });
+        }
+
+        // Create a PaymentIntent with the order amount and currency
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "aed",
+          payment_method_types: ["card"],
+        });
+
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (error) {
+        console.error('Error creating payment intent:', error);
+        res.status(500).send({ error: 'Failed to create payment intent' });
+      }
     });
 
     // ---------------------
     // PAYMENT 
     // ---------------------
 
-    
-app.post('/create-checkout-session', async (req, res) => {
-  const session = await stripe.checkout.sessions.create({
-    line_items: [
-      {
-        // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-        price: '{{PRICE_ID}}',
-        quantity: 1,
-      },
-    ],
-    mode: 'payment',
-    success_url: `${YOUR_DOMAIN}?success=true`,
-    cancel_url: `${YOUR_DOMAIN}?canceled=true`,
-  });
 
-  res.redirect(303, session.url);
-});
+    app.post('/create-checkout-session', async (req, res) => {
+      const session = await stripe.checkout.sessions.create({
+        line_items: [
+          {
+            // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+            price: '{{PRICE_ID}}',
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${YOUR_DOMAIN}?success=true`,
+        cancel_url: `${YOUR_DOMAIN}?canceled=true`,
+      });
+
+      res.redirect(303, session.url);
+    });
 
 
 
