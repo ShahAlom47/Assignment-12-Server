@@ -54,6 +54,7 @@ async function run() {
     const wishListCollection = client.db("Assign_12_DB").collection('wishListData')
     const offerDataCollection = client.db("Assign_12_DB").collection('offerData')
     const paymentDataCollection = client.db("Assign_12_DB").collection('paymentData')
+    const advertiseDataCollection = client.db("Assign_12_DB").collection('advertiseData')
 
 
     // middleware 
@@ -112,7 +113,7 @@ async function run() {
 
 
 
-// user Api start
+    // user Api start
 
 
     app.post('/addUser', async (req, res) => {
@@ -129,7 +130,7 @@ async function run() {
 
     })
 
-    app.get('/allUser/admin', verifyToken,verifyAdmin,async(req,res)=>{
+    app.get('/allUser/admin', verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray()
       res.send(result)
 
@@ -149,28 +150,54 @@ async function run() {
 
     // change user role by admin 
 
-    app.patch('/user/admin/role/:id',verifyToken, verifyAdmin, async (req, res) => {
+    app.patch('/user/admin/role/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id
       const { role } = req.body
       const query = { _id: new ObjectId(id) }
       updateDoc = {
         $set: { role: role }
       }
-      const result = await userCollection.updateOne(query,updateDoc);
+      const result = await userCollection.updateOne(query, updateDoc);
       res.send(result);
     })
 
 
-    app.delete('/user/admin/delete/:id',verifyToken, verifyAdmin, async (req, res) => {
+    app.delete('/user/admin/delete/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id
-     
+
       const query = { _id: new ObjectId(id) }
-     
+
       const result = await userCollection.deleteOne(query);
       res.send(result);
     })
 
-// user Api end
+    // user Api end
+
+    // Advertise 
+
+
+    app.post('/addAdvertise', verifyToken, verifyAdmin, async (req, res) => {
+      const property = req.body;
+      const { _id, ...rest } = property;
+      const modifiedProperty = { ...rest, propertyId: _id };
+
+
+      const query = { propertyId: property._id };
+      const existing = await advertiseDataCollection.findOne(query);
+      if (existing) {
+        return res.send({ message: 'Property already exists', insertedId: null });
+      }
+
+
+      const result = await advertiseDataCollection.insertOne(modifiedProperty);
+      res.send(result);
+    });
+
+
+
+
+
+
 
 
 
@@ -187,12 +214,51 @@ async function run() {
       const result = await propertyCollection.find().limit(6).toArray()
       res.send(result)
     })
+
+
+
     app.get('/allProperty', async (req, res) => {
-      const result = await propertyCollection.find().toArray()
+      const { sort, search } = req.query;
+      const query = {};
+      // console.log(search);
+      if (search) {
+        query.$or = [
+          { title: { $regex: search, $options: 'i' } },
+          { property_location: { $regex: search, $options: 'i' } },
+          { property_type: { $regex: search, $options: 'i' } }
+        ];
+      }
+
+      let sortQuery = {};
+      if (sort) {
+        sortQuery = { max_price_num: sort === 'ase' ? 1 : -1 };
+      }
+
+      try {
+        const result = await propertyCollection.aggregate([
+          { $match: query },
+          { $addFields: { max_price_num: { $toInt: "$max_price" } } },
+          { $sort: sortQuery }
+        ]).toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ error: error.message });
+      }
+    });
+
+
+
+
+    // verified property 
+    app.get('/verifiedProperty', verifyToken, async (req, res) => {
+      const query = { verification_status: 'verified' }
+      const result = await propertyCollection.find(query).toArray()
       res.send(result)
     })
 
-    app.get('/property/:id', async (req, res) => {
+
+    app.get('/property/:id', verifyToken, async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
       const result = await propertyCollection.findOne(query)
@@ -229,14 +295,14 @@ async function run() {
 
     // property verify by admin 
     // ----------------------------
-    app.patch('/property/admin/verify/:id',verifyToken, verifyAdmin, async (req, res) => {
+    app.patch('/property/admin/verify/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id
       const { status } = req.body
       const query = { _id: new ObjectId(id) }
       updateDoc = {
         $set: { verification_status: status }
       }
-      const result = await propertyCollection.updateOne(query,updateDoc);
+      const result = await propertyCollection.updateOne(query, updateDoc);
       res.send(result);
     })
 
@@ -415,6 +481,16 @@ async function run() {
       console.log(id, verification_status);
     })
 
+
+    // sold property 
+    app.get('/soldProperty/:email', verifyToken, verifyAgent, async (req, res) => {
+
+      const email = req.params.email
+      const query = { agent_email: email, verification_status: 'bought' }
+      const result = await offerDataCollection.find(query).toArray()
+      console.log(email);
+      res.send(result)
+    })
 
 
     // enquiry api 
