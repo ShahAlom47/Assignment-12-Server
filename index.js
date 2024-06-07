@@ -111,6 +111,11 @@ async function run() {
 
     })
 
+
+
+// user Api start
+
+
     app.post('/addUser', async (req, res) => {
       const userInfo = req.body
 
@@ -121,6 +126,12 @@ async function run() {
       }
 
       const result = await userCollection.insertOne(userInfo)
+      res.send(result)
+
+    })
+
+    app.get('/allUser/admin', verifyToken,verifyAdmin,async(req,res)=>{
+      const result = await userCollection.find().toArray()
       res.send(result)
 
     })
@@ -137,7 +148,20 @@ async function run() {
       res.send({ userRole });
     })
 
+    // change user role by admin 
 
+    app.patch('/user/admin/role/:id',verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id
+      const { role } = req.body
+      const query = { _id: new ObjectId(id) }
+      updateDoc = {
+        $set: { role: role }
+      }
+      const result = await userCollection.updateOne(query,updateDoc);
+      res.send(result);
+    })
+
+// user Api end
 
 
 
