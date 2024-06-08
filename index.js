@@ -17,7 +17,6 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
-      'https://bistro-boss-final-projec-81261.web.app'
 
     ],
     credentials: true,
@@ -263,15 +262,6 @@ async function run() {
       res.send(result)
     })
 
-
-    app.get('/propertyTest', async (req, res) => {
-      const id = req.params.id
-      const query = { _id: new ObjectId(id) }
-      const result = await propertyCollection.find().toArray()
-      console.log(result,'iiiiii');
-      res.send(result)
-
-    })
 
 
 
