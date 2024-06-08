@@ -210,11 +210,17 @@ async function run() {
       res.send(result)
     })
 
+    // 
     app.get('/property', async (req, res) => {
-      const result = await propertyCollection.find().limit(6).toArray()
+      const result = await advertiseDataCollection.find().limit(6).toArray()
       res.send(result)
     })
+    app.get('/allProperty/admin', async (req, res) => {
+      const result = await propertyCollection.find().toArray()
+      res.send(result)
 
+
+    })
 
 
     app.get('/allProperty', async (req, res) => {
