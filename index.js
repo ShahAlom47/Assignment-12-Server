@@ -264,13 +264,34 @@ async function run() {
     })
 
 
-    app.get('/property/:id', verifyToken, async (req, res) => {
+    app.get('/propertyTest', async (req, res) => {
       const id = req.params.id
       const query = { _id: new ObjectId(id) }
-      const result = await propertyCollection.findOne(query)
+      const result = await propertyCollection.find().toArray()
+      console.log(result,'iiiiii');
       res.send(result)
 
     })
+
+
+
+    
+
+    app.get('/property/:id', verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+  
+     
+      const firstResult = await propertyCollection.findOne(query);
+      if (firstResult) {
+          res.send(firstResult);
+      } else {
+          const secondResult = await advertiseDataCollection.findOne(query);
+     
+          res.send(secondResult);
+      }
+  });
+
 
     app.get('/myAddedProperty/:email', verifyToken, verifyAgent, async (req, res) => {
       const email = req.params.email
