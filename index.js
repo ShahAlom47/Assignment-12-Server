@@ -17,6 +17,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
+      'https://assignment-12-e88ce.web.app',
 
     ],
     credentials: true,
@@ -283,7 +284,7 @@ async function run() {
   });
 
 
-    app.get('/myAddedProperty/:email', verifyToken, verifyAgent, async (req, res) => {
+    app.get('/myAddedProperty/:email', verifyToken, async (req, res) => {
       const email = req.params.email
       const query = { agent_email: email }
       const result = await propertyCollection.find(query).toArray()
